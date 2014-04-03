@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		87DFBF4418ECD9F700B07AE6 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 87DFBF4318ECD9F700B07AE6 /* main.c */; };
 		87DFBF4618ECD9F700B07AE6 /* EP01.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 87DFBF4518ECD9F700B07AE6 /* EP01.1 */; };
+		87DFBF4D18ED0E4F00B07AE6 /* parse_input.c in Sources */ = {isa = PBXBuildFile; fileRef = 87DFBF4C18ED0E4F00B07AE6 /* parse_input.c */; };
+		87DFBF4F18ED0E8700B07AE6 /* data_types.h in Sources */ = {isa = PBXBuildFile; fileRef = 87DFBF4E18ED0E8700B07AE6 /* data_types.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,6 +30,8 @@
 		87DFBF4018ECD9F700B07AE6 /* EP01 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = EP01; sourceTree = BUILT_PRODUCTS_DIR; };
 		87DFBF4318ECD9F700B07AE6 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
 		87DFBF4518ECD9F700B07AE6 /* EP01.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = EP01.1; sourceTree = "<group>"; };
+		87DFBF4C18ED0E4F00B07AE6 /* parse_input.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = parse_input.c; sourceTree = "<group>"; };
+		87DFBF4E18ED0E8700B07AE6 /* data_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = data_types.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +66,8 @@
 			children = (
 				87DFBF4318ECD9F700B07AE6 /* main.c */,
 				87DFBF4518ECD9F700B07AE6 /* EP01.1 */,
+				87DFBF4C18ED0E4F00B07AE6 /* parse_input.c */,
+				87DFBF4E18ED0E8700B07AE6 /* data_types.h */,
 			);
 			path = EP01;
 			sourceTree = "<group>";
@@ -117,6 +123,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				87DFBF4D18ED0E4F00B07AE6 /* parse_input.c in Sources */,
+				87DFBF4F18ED0E8700B07AE6 /* data_types.h in Sources */,
 				87DFBF4418ECD9F700B07AE6 /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -227,6 +235,7 @@
 				87DFBF4B18ECD9F700B07AE6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
