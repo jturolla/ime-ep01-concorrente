@@ -5,36 +5,36 @@
 	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
 	<false/>
 	<key>IDESourceControlProjectIdentifier</key>
-	<string>DA307413-1D64-4369-8BFE-292388F1828D</string>
+	<string>E3343929-0498-45C6-87EE-45401451943A</string>
 	<key>IDESourceControlProjectName</key>
 	<string>EP01</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>6DB11715-C0E5-4783-AC8E-DDD537CB262B</key>
-		<string>ssh://github.com/jturolla/ime-ep01-concorrente.git</string>
+		<key>E39539A1-D9C8-4535-867B-11985565A5EA</key>
+		<string>https://github.com/jturolla/ime-ep01-concorrente</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
 	<string>EP01.xcodeproj/project.xcworkspace</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>6DB11715-C0E5-4783-AC8E-DDD537CB262B</key>
+		<key>E39539A1-D9C8-4535-867B-11985565A5EA</key>
 		<string>../..</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
-	<string>ssh://github.com/jturolla/ime-ep01-concorrente.git</string>
+	<string>https://github.com/jturolla/ime-ep01-concorrente</string>
 	<key>IDESourceControlProjectVersion</key>
 	<integer>110</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>6DB11715-C0E5-4783-AC8E-DDD537CB262B</string>
+	<string>E39539A1-D9C8-4535-867B-11985565A5EA</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>6DB11715-C0E5-4783-AC8E-DDD537CB262B</string>
+			<string>E39539A1-D9C8-4535-867B-11985565A5EA</string>
 			<key>IDESourceControlWCCName</key>
-			<string>EP01</string>
+			<string>ime-ep01-concorrente</string>
 		</dict>
 	</array>
 </dict>
