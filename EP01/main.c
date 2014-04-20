@@ -19,10 +19,67 @@
 
 FILE *file;
 pthread_t threads[MAXTEAMS * 2];
+pthread_mutex_t pista_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-void logPilot(char logMessage[], struct Pilot pilotData){
+void logPilot(char logMessage[], struct Pilot *pilotData){
     printf("[PILOTO %d | VOLTA %d | SPEED: %d | FUEL: %d] %s \n",
-           pilotData.pilotNumber, pilotData.currentLap, pilotData.currentSpeed, pilotData.fuelLevel, logMessage);
+           pilotData->pilotNumber, pilotData->currentLap, pilotData->currentSpeed, pilotData->fuelLevel, logMessage);
+}
+
+void logTrack(int trackPosition) {
+    struct TrackStep *step = &pista[trackPosition];
+
+    if (step->isDouble == 1) {
+        struct Pilot *pilot0;
+        struct Pilot *pilot1;
+        int pilotNumber0;
+        int pilotNumber1;
+        int pilotLap0;
+        int pilotLap1;
+
+        if (step->doubleTrack.pilot0_id != -1){
+            pilot0 = &pilots[step->doubleTrack.pilot0_id];
+            pilotNumber0 = pilot0->pilotNumber;
+            pilotLap0 = pilot0->currentLap;
+        } else {
+            pilotNumber0 = -1;
+            pilotLap0 = -1;
+        }
+
+        if (step->doubleTrack.pilot1_id != -1){
+            pilot1 = &pilots[step->doubleTrack.pilot1_id];
+            pilotNumber1 = pilot1->pilotNumber;
+            pilotLap1 = pilot1->currentLap;
+        } else {
+            pilotNumber1 = -1;
+            pilotLap1 = -1;
+        }
+
+        printf("PISTA DUPLA --------> [ PILOTO-0: %d (LAP: %d) | PILOTO-1: %d (LAP: %d) ]  (%d)\n", pilotNumber0, pilotLap0, pilotNumber1, pilotLap1, trackPosition);
+    } else {
+        struct Pilot *pilot;
+        int pilotNumber;
+        int pilotLap;
+
+        if (step->singleTrack.pilot_id != -1){
+            pilot = &pilots[step->doubleTrack.pilot0_id];
+            pilotNumber = pilot->pilotNumber;
+            pilotLap = pilot->currentLap;
+        } else {
+            pilotNumber = -1;
+            pilotLap = -1;
+        }
+
+        printf("PISTA SIMPLES ------> [ PILOTO: %d (LAP: %d) ] (%d)\n", pilotNumber, pilotLap, trackPosition);
+    }
+
+}
+
+void logEntireTrack() {
+    // Print lineup to validation purposes.
+    for (int a = 0; a < 160; a++) {
+        logTrack(a);
+    }
 }
 
 void parseInput(const char * filename) {
@@ -106,112 +163,139 @@ void parseInput(const char * filename) {
 
         lineNumber++;
     }
+
+    fclose(file);
 }
 
-void addPilot(struct Pilot pilot, struct TrackStep nextStep, int position) {
+// This method keeps pilot and pista data in sync.
+void addPilot(int pilotNumber, int trackStepNumber, int position) {
+
+    struct Pilot *pilot = &pilots[pilotNumber];
+    struct TrackStep *step = &pista[trackStepNumber];
 
     if (position == 0) {
-        nextStep.doubleTrack.pilot0 = pilot;
+        step->doubleTrack.pilot0_id = pilot->pilotNumber;
     }
 
     if (position == 1) {
-        nextStep.doubleTrack.pilot1 = pilot;
+        step->doubleTrack.pilot1_id = pilot->pilotNumber;
     }
 
     if (position == 2) {
-        nextStep.singleTrack.pilot = pilot;
+        step->singleTrack.pilot_id = pilot->pilotNumber;
+    }
+
+    pilot->currentTrackStepNumber = trackStepNumber;
+    pilot->currentTrackStepPosition = position;
+
+}
+
+void removePilot(struct Pilot *pilot) {
+
+    struct TrackStep *step = &pista[pilot->currentTrackStepNumber];
+
+    if (pilot->currentTrackStepPosition == 0) {
+        step->doubleTrack.pilot0_id = -1;
+    }
+
+    if (pilot->currentTrackStepPosition == 1) {
+        step->doubleTrack.pilot1_id = -1;
+    }
+
+    if (pilot->currentTrackStepPosition == 2) {
+        step->singleTrack.pilot_id = -1;
     }
 
 }
 
-void removePilot(struct Pilot pilot) {
+void moveForward(int pilotNumber) {
 
-    struct TrackStep trackStep = pista[pilot.currentTrackStepNumber];
+    //pthread_mutex_lock(&pista_mutex);
+    struct Pilot *pilot = &pilots[pilotNumber];
 
-    struct Pilot nullPilot;
-    nullPilot.isEmpty = 1;
-
-    if (pilot.currentTrackStepPosition == 0) {
-        trackStep.doubleTrack.pilot0 = nullPilot;
+    if (pilot->currentTrackStepNumber == INT16_MAX - 1) {
+        //lol
+        printf("Current track step number will overflow.");
+        exit(0);
     }
 
-    if (pilot.currentTrackStepPosition == 1) {
-        trackStep.doubleTrack.pilot1 = nullPilot;
-    }
+    int nextStepNumber = pilot->currentTrackStepNumber + 1;
 
-    if (pilot.currentTrackStepPosition == 2) {
-        trackStep.singleTrack.pilot = nullPilot;
-    }
-
-}
-
-void moveForward(struct Pilot pilot) {
-
-    int nextStepNumber = pilot.currentTrackStepNumber + 1;
+    // Se o piloto chegar na posição 160, ele completou uma volta.
+    // Ele nunca deve ser posicionado na posição 160 pois ela não existe,
+    // Redirecioná-lo à posição zero.
     if (nextStepNumber == 160) {
         nextStepNumber = 0;
+        pilot->currentLap++;
+        pilot->fuelLevel--;
+
+        if (pilot->currentLap % 10 == 0) {
+            logPilot("COMPLETOU VOLTA!", pilot);
+        }
     }
 
-    struct TrackStep nextStep = pista[nextStepNumber];
+    struct TrackStep *nextStep = &pista[nextStepNumber];
 
     // Tem vaga na nextStep?
     int nextStepPositionAvailable = -1;
 
     // Qual vaga está disponível?
     // Enquanto não houver um espaço disponível no nextStep, aguardar.
+
+    // AWAIT AVAILABLE TRACKSTEP
     while (nextStepPositionAvailable == -1 ) {
-        if (nextStep.isDouble == 1) {
-            if (nextStep.doubleTrack.pilot0.isEmpty == 1) {
+        if (nextStep->isDouble == 1) {
+            if (nextStep->doubleTrack.pilot0_id == -1) {
                 nextStepPositionAvailable = 0;
-            } else if (nextStep.doubleTrack.pilot1.isEmpty == 1) {
+            } else if (nextStep->doubleTrack.pilot1_id == -1) {
                 nextStepPositionAvailable = 1;
             }
         } else {
-            if (nextStep.singleTrack.pilot.isEmpty == 1) {
+            if (nextStep->singleTrack.pilot_id == -1) {
                 nextStepPositionAvailable = 2;
             }
         }
-        wait(1);
+
+        usleep(1);
+        //printf("Não pode prosseguir: PILOTO: %d | PROXIMA POSIÇÃO: %d \n", pilot.pilotNumber, nextStep.stepNumber );
     }
 
-    //// SESSAO CRITICA /////
-    removePilot(pilot);
-    addPilot(pilot, nextStep, nextStepPositionAvailable);
-    ////////////////////////
-    pilot.currentTrackStepNumber++;
+    //printf("PODE PROSSEGUIR SIM! PILOTO: %d | PRÓXIMA TRACKSTEP: %d | POSIÇÃO: %d \n", pilot->pilotNumber, nextStep->stepNumber, nextStepPositionAvailable);
 
+    removePilot(pilot);
+    addPilot(pilot->pilotNumber, nextStep->stepNumber, nextStepPositionAvailable);
+
+    //pthread_mutex_unlock(&pista_mutex);
 }
 
 void *piloto(void *arg) {
 
     int pilotNumber = (int) arg;
-    struct Pilot pilot = pilots[pilotNumber];
+
+    //@TODO: Pilot sometimes is not initialized.
+    struct Pilot *pilot = &pilots[pilotNumber];
 
     logPilot("PARTIU!", pilot);
 
-    while (pilot.currentLap != totalLaps) {
-        if (pilot.fuelLevel == 0) {
+    while (pilot->currentLap != totalLaps+10) {
+        if (pilot->fuelLevel == 0) {
             logPilot("ACABOU A GASOLINA!", pilot);
             return NULL;
         } else {
 
-            if (pilot.fuelLevel <= 2) {
-
+            if (pilot->fuelLevel <= 2) {
                 // Enter boxes
                 // @TODO: Sessão crítica de entrada nos boxes.
                 //
                 logPilot("ENTRANDO NO BOX!", pilot);
                 sleep(1); // Time to change the tires :)
-                pilot.fuelLevel = (totalLaps/2)+1;
+                pilot->fuelLevel = (totalLaps/2)+1;
                 logPilot("SAINDO DO BOX", pilot);
             }
 
             // TODO
             // SESSAO CRITICA DE ENTRAR EM UM TRACKSTEP.
-            moveForward(pilot);
-            pilot.fuelLevel--;
-
-            logPilot("COMPLETOU VOLTA!", pilot);
+            moveForward(pilot->pilotNumber);
         }
     }
 
@@ -236,25 +320,25 @@ int main(int argc, const char * argv[]) {
 #endif
 
     // Initialize track.
-    for (int i = 0; i == 159; i++) {
+    for (int i = 0; i <= 159; i++) {
         pista[i].isDouble = 0;
         pista[i].stepNumber = i;
-        pista[i].singleTrack.pilot.isEmpty = 1;
-        pista[i].doubleTrack.pilot0.isEmpty = 1;
-        pista[i].doubleTrack.pilot1.isEmpty = 1;
+        pista[i].singleTrack.pilot_id = -1;
+        pista[i].doubleTrack.pilot0_id = -1;
+        pista[i].doubleTrack.pilot1_id = -1;
     }
 
     parseInput(fileName);
 
     // Initialize pilots
     printf("Iniciando equipes... \n");
+    printf("PILOTOS: %d \n", (totalTeams*2));
 
     int pilotNumber = 0;
-    for (int teamNumber = 0; teamNumber <= totalTeams; teamNumber++) {
+    for (int teamNumber = 0; teamNumber < totalTeams; teamNumber++) {
 
         struct Pilot pilotA;
 
-        pilotA.isEmpty = 0;
         pilotA.pilotNumber = pilotNumber;
         pilotA.teamNumber = teamNumber;
         pilotA.teamPilotNumber = 0;
@@ -268,7 +352,6 @@ int main(int argc, const char * argv[]) {
 
         struct Pilot pilotB;
 
-        pilotB.isEmpty = 0;
         pilotB.pilotNumber = pilotNumber;
         pilotA.teamNumber = teamNumber;
         pilotB.teamPilotNumber = 1;
@@ -289,45 +372,48 @@ int main(int argc, const char * argv[]) {
     //
     // @TODO: Organize pilots by points before lineup.
     pilotNumber = 0;
-    for (int i = 0; i <= totalTeams; i++) { // Each Trackstep
-        struct TrackStep step = pista[i];
+    for (int trackStepNumber = 0; trackStepNumber < totalTeams; trackStepNumber++) { // Each Trackstep from 0 ~ <totalTeams>
 
         // Tracksteps da largada devem ser sempre duplos!!!
         //
         // Apenas ignorar que não são duplos e tratar como duplos,
         // check de duplo ou não deve ser feito quando um piloto vai
         // entrar em um step, portanto é só ignorar a validação.
-        step.doubleTrack.pilot0 = pilots[pilotNumber];
-        step.doubleTrack.pilot0.currentTrackStepNumber = step.stepNumber;
-        step.doubleTrack.pilot0.currentTrackStepPosition = 0;
-        pilotNumber++;
-        step.doubleTrack.pilot1 = pilots[pilotNumber];
-        step.doubleTrack.pilot1.currentTrackStepNumber = step.stepNumber;
-        step.doubleTrack.pilot1.currentTrackStepPosition = 1;
+        addPilot(pilotNumber, trackStepNumber, 0);
         pilotNumber++;
 
-        printf("POSIÇÃO %d @@@@| Piloto %d || Piloto %d |@@@@ \n", i, step.doubleTrack.pilot0.pilotNumber, step.doubleTrack.pilot1.pilotNumber);
+        addPilot(pilotNumber, trackStepNumber, 1);
+        pilotNumber++;
+
+        struct TrackStep step = pista[trackStepNumber];
+        step.isDouble = 1; // Assure that the start tracks are double.
+        pista[trackStepNumber] = step;
     }
 
-    printf("@@@@@@@@@@@@| - LINHA DE CHEGADA - |@@@@@@@@@@@@ \n\n");
+    logEntireTrack();
 
-    sleep(1);
-    printf("@@@@@@@@@@@@| -     READY    - |@@@@@@@@@@@@ \n\n");
-    sleep(1);
-    printf("@@@@@@@@@@@@| -     SET      - |@@@@@@@@@@@@ \n\n");
-    sleep(1);
-    printf("@@@@@@@@@@@@| -     GO!      - |@@@@@@@@@@@@ \n\n");
+//    sleep(1);
+//    printf("@@@@@@@@@@@@| -     READY    - |@@@@@@@@@@@@ \n\n");
+//    sleep(1);
+//    printf("@@@@@@@@@@@@| -     SET      - |@@@@@@@@@@@@ \n\n");
+//    sleep(1);
+//    printf("@@@@@@@@@@@@| -     GO!      - |@@@@@@@@@@@@ \n\n");
 
     // Largada
     printf("LARGADA! \n");
+
     for (int i = 0; i < (totalTeams*2); i++) {
         int pilotNumberInArray = (int) i;
         pthread_create(&threads[i], NULL, piloto, (void*) pilotNumberInArray);
     }
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < (totalTeams*2); i++) {
         pthread_join(threads[i], NULL);
     }
+
+    // Code below will run after all pilots arrive.
+
+    logEntireTrack();
 
     printf("[FORMULA EP1] TODOS OS PILOTOS JÁ TERMINARAM A CORRIDA! \n");
     printf("[FORMULA EP1] CALCULANDO RESULTADOS...");
