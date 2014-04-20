@@ -20,6 +20,7 @@
 FILE *file;
 pthread_t threads[MAXTEAMS * 2];
 pthread_mutex_t pista_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t box_mutex[MAXTEAMS];
 
 void logPilot(char logMessage[], struct Pilot *pilotData){
     printf("[PILOTO %d | VOLTA %d | SPEED: %d | FUEL: %d] %s \n",
@@ -208,66 +209,6 @@ void removePilot(struct Pilot *pilot) {
 
 }
 
-void moveForward(int pilotNumber) {
-
-    //pthread_mutex_lock(&pista_mutex);
-    struct Pilot *pilot = &pilots[pilotNumber];
-
-    if (pilot->currentTrackStepNumber == INT16_MAX - 1) {
-        //lol
-        printf("Current track step number will overflow.");
-        exit(0);
-    }
-
-    int nextStepNumber = pilot->currentTrackStepNumber + 1;
-
-    // Se o piloto chegar na posição 160, ele completou uma volta.
-    // Ele nunca deve ser posicionado na posição 160 pois ela não existe,
-    // Redirecioná-lo à posição zero.
-    if (nextStepNumber == 160) {
-        nextStepNumber = 0;
-        pilot->currentLap++;
-        pilot->fuelLevel--;
-
-        if (pilot->currentLap % 10 == 0) {
-            logPilot("COMPLETOU VOLTA!", pilot);
-        }
-    }
-
-    struct TrackStep *nextStep = &pista[nextStepNumber];
-
-    // Tem vaga na nextStep?
-    int nextStepPositionAvailable = -1;
-
-    // Qual vaga está disponível?
-    // Enquanto não houver um espaço disponível no nextStep, aguardar.
-
-    // AWAIT AVAILABLE TRACKSTEP
-    while (nextStepPositionAvailable == -1 ) {
-        if (nextStep->isDouble == 1) {
-            if (nextStep->doubleTrack.pilot0_id == -1) {
-                nextStepPositionAvailable = 0;
-            } else if (nextStep->doubleTrack.pilot1_id == -1) {
-                nextStepPositionAvailable = 1;
-            }
-        } else {
-            if (nextStep->singleTrack.pilot_id == -1) {
-                nextStepPositionAvailable = 2;
-            }
-        }
-
-        usleep(1);
-        //printf("Não pode prosseguir: PILOTO: %d | PROXIMA POSIÇÃO: %d \n", pilot.pilotNumber, nextStep.stepNumber );
-    }
-
-    //printf("PODE PROSSEGUIR SIM! PILOTO: %d | PRÓXIMA TRACKSTEP: %d | POSIÇÃO: %d \n", pilot->pilotNumber, nextStep->stepNumber, nextStepPositionAvailable);
-
-    removePilot(pilot);
-    addPilot(pilot->pilotNumber, nextStep->stepNumber, nextStepPositionAvailable);
-
-    //pthread_mutex_unlock(&pista_mutex);
-}
-
 void *piloto(void *arg) {
 
     int pilotNumber = (int) arg;
@@ -277,29 +218,82 @@ void *piloto(void *arg) {
 
     logPilot("PARTIU!", pilot);
 
-    while (pilot->currentLap != totalLaps+10) {
-        if (pilot->fuelLevel == 0) {
-            logPilot("ACABOU A GASOLINA!", pilot);
-            return NULL;
-        } else {
+    // Running loop
+    while (1) {
 
-            if (pilot->fuelLevel <= 2) {
-                // Enter boxes
-                // @TODO: Sessão crítica de entrada nos boxes.
-                //
+        if (pilot->currentLap == totalLaps) {
+            logPilot("PASSOU NA LINHA DE CHEGADA!", pilot);
+            removePilot(pilot);
+            break;
+        }
+
+        if (pilot->fuelLevel == 0) {
+            logPilot("COMBUSTÍVEL NA RESERVA!", pilot);
+        }
+
+        // BOX
+        if (pilot->fuelLevel <= 3) {
+            if (pthread_mutex_trylock(&box_mutex[pilot->teamNumber]) == 0) {
                 logPilot("ENTRANDO NO BOX!", pilot);
                 sleep(1); // Time to change the tires :)
                 pilot->fuelLevel = (totalLaps/2)+1;
                 logPilot("SAINDO DO BOX", pilot);
+
+                pthread_mutex_unlock(&box_mutex[pilot->teamNumber]);
+            }
+        }
+
+        int nextStepNumber = pilot->currentTrackStepNumber + 1;
+
+        // Try to get a lock on the track, if succeeds, move the rider, otherwise waits more.
+        if (pthread_mutex_trylock(&pista_mutex) == 0) {
+
+            // Se o piloto chegar na posição 160, ele completou uma volta.
+            // Ele nunca deve ser posicionado na posição 160 pois ela não existe,
+            // Redirecioná-lo à posição zero.
+            if (nextStepNumber == 160) {
+                nextStepNumber = 0;
+                pilot->currentLap++;
+                pilot->fuelLevel--; // Um ponto de combustível é suficiente para uma volta.
+
+                logPilot("COMPLETOU VOLTA!", pilot);
             }
 
-            // TODO
-            // SESSAO CRITICA DE ENTRAR EM UM TRACKSTEP.
-            moveForward(pilot->pilotNumber);
+            struct TrackStep *nextStep = &pista[nextStepNumber];
+
+            // Tem vaga na nextStep?
+            int nextStepPositionAvailable = -1;
+
+            // Qual vaga está disponível?
+            // Enquanto não houver um espaço disponível no nextStep, aguardar.
+            if (nextStep->isDouble == 1) {
+                if (nextStep->doubleTrack.pilot0_id == -1) {
+                    nextStepPositionAvailable = 0;
+                } else if (nextStep->doubleTrack.pilot1_id == -1) {
+                    nextStepPositionAvailable = 1;
+                }
+            } else {
+                if (nextStep->singleTrack.pilot_id == -1) {
+                    nextStepPositionAvailable = 2;
+                }
+            }
+
+            if (nextStepPositionAvailable == -1) {
+                pthread_mutex_unlock(&pista_mutex);
+                continue;
+            }
+
+            //printf("PODE PROSSEGUIR SIM! PILOTO: %d | PRÓXIMA TRACKSTEP: %d | POSIÇÃO: %d \n", pilot->pilotNumber, nextStep->stepNumber, nextStepPositionAvailable);
+
+            removePilot(pilot);
+            addPilot(pilot->pilotNumber, nextStep->stepNumber, nextStepPositionAvailable);
+
+            pthread_mutex_unlock(&pista_mutex);
+        } else {
+            // could not get a hold on pista_mutex.
+            continue;
         }
     }
-
-    logPilot("PASSOU NA LINHA DE CHEGADA!", pilot);
 
     return NULL;
 }
@@ -328,6 +322,11 @@ int main(int argc, const char * argv[]) {
         pista[i].doubleTrack.pilot1_id = -1;
     }
 
+    // Initialize box mutexs.
+    for (int i = 0; i < MAXTEAMS; i++){
+        pthread_mutex_init(&box_mutex[i], NULL);
+    }
+
     parseInput(fileName);
 
     // Initialize pilots
@@ -353,7 +352,7 @@ int main(int argc, const char * argv[]) {
         struct Pilot pilotB;
 
         pilotB.pilotNumber = pilotNumber;
-        pilotA.teamNumber = teamNumber;
+        pilotB.teamNumber = teamNumber;
         pilotB.teamPilotNumber = 1;
         pilotB.currentLap = 0;
         pilotB.fuelLevel = (totalLaps/2)+1;
