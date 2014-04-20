@@ -10,15 +10,23 @@
 #define EP01_data_h
 
 struct Pilot {
+    unsigned int isEmpty;
+
     unsigned int pilotNumber; // 0 - 2x totalTeams;
     unsigned int teamNumber; // totalTemas[this].number
     unsigned int teamPilotNumber; // 0 or 1
     
     unsigned int currentLap;
+    unsigned int currentTrackStepNumber;
+    unsigned int currentTrackStepPosition; // 0 => doubleTrack[0], 1 => doubleTrack[1], 2 => singleTrack.
+
     unsigned int fuelLevel;
     unsigned int currentSpeed;
+
     int score;
 };
+
+struct Pilot pilots[MAXTEAMS * 2]; // Max teams is 50.
 
 struct DoubleTrackStep {
     struct Pilot pilot0;
@@ -33,6 +41,7 @@ struct TrackStep {
     struct DoubleTrackStep doubleTrack;
     struct SingleTrackStep singleTrack;
     unsigned int isDouble;
+    unsigned int stepNumber;
 };
 
 int totalLaps;
