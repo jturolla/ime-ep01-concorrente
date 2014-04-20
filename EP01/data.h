@@ -12,16 +12,17 @@
 struct Pilot {
     unsigned int pilotNumber; // 0 - 2x totalTeams;
     unsigned int teamNumber; // totalTemas[this].number
-    char teamPilotNumber; // A or B
+    unsigned int teamPilotNumber; // 0 or 1
     
     unsigned int currentLap;
     unsigned int fuelLevel;
     unsigned int currentSpeed;
+    int score;
 };
 
 struct DoubleTrackStep {
-    struct Pilot pilot;
-    struct Pilot secondPilot;
+    struct Pilot pilot0;
+    struct Pilot pilot1;
 };
 
 struct SingleTrackStep {
@@ -36,6 +37,8 @@ struct TrackStep {
 
 int totalLaps;
 int totalTeams;
+int uniformVelocity;
+int alternateVelocityPercentage;
 
 struct TrackStep pista[160]; // each track position equals 25 meters and takes one pilot.
 struct TrackStep boxes[10]; // pilots can be in boxes too, each position equals 25 meters.

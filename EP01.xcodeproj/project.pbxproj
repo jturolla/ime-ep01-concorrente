@@ -8,9 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		87DFBF4418ECD9F700B07AE6 /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 87DFBF4318ECD9F700B07AE6 /* main.c */; };
-		87DFBF4D18ED0E4F00B07AE6 /* parse_input.c in Sources */ = {isa = PBXBuildFile; fileRef = 87DFBF4C18ED0E4F00B07AE6 /* parse_input.c */; };
-		AB6A9DDC18EDAFF000E838D2 /* helper.h in Sources */ = {isa = PBXBuildFile; fileRef = AB6A9DDB18EDAFF000E838D2 /* helper.h */; };
-		AB6A9DDE18EDB0E100E838D2 /* pilot.c in Sources */ = {isa = PBXBuildFile; fileRef = AB6A9DDD18EDB0E100E838D2 /* pilot.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,11 +25,8 @@
 /* Begin PBXFileReference section */
 		87DFBF4018ECD9F700B07AE6 /* EP01 */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = EP01; sourceTree = BUILT_PRODUCTS_DIR; };
 		87DFBF4318ECD9F700B07AE6 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
-		87DFBF4C18ED0E4F00B07AE6 /* parse_input.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = parse_input.c; sourceTree = "<group>"; };
+		87EE113619039074003ED8BF /* inputdata.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = inputdata.txt; sourceTree = "<group>"; };
 		AB6A9DDA18EDAEAC00E838D2 /* data.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = data.h; sourceTree = "<group>"; };
-		AB6A9DDB18EDAFF000E838D2 /* helper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = helper.h; sourceTree = "<group>"; };
-		AB6A9DDD18EDB0E100E838D2 /* pilot.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = pilot.c; sourceTree = "<group>"; };
-		AB6A9DDF18EDB24F00E838D2 /* pilot.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = pilot.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,11 +60,8 @@
 			isa = PBXGroup;
 			children = (
 				87DFBF4318ECD9F700B07AE6 /* main.c */,
-				87DFBF4C18ED0E4F00B07AE6 /* parse_input.c */,
 				AB6A9DDA18EDAEAC00E838D2 /* data.h */,
-				AB6A9DDB18EDAFF000E838D2 /* helper.h */,
-				AB6A9DDD18EDB0E100E838D2 /* pilot.c */,
-				AB6A9DDF18EDB24F00E838D2 /* pilot.h */,
+				87EE113619039074003ED8BF /* inputdata.txt */,
 			);
 			path = EP01;
 			sourceTree = "<group>";
@@ -126,9 +117,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AB6A9DDE18EDB0E100E838D2 /* pilot.c in Sources */,
-				87DFBF4D18ED0E4F00B07AE6 /* parse_input.c in Sources */,
-				AB6A9DDC18EDAFF000E838D2 /* helper.h in Sources */,
 				87DFBF4418ECD9F700B07AE6 /* main.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
